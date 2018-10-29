@@ -255,7 +255,7 @@ def fight(player_health, item, inventory):
 def getValidInt(minNum, maxNum):
 
 	num = int(input(PROMPT))
-	while(num < minNum and num > maxNum):
+	while(num < minNum or num > maxNum):
 		num = int(input(PROMPT))
 
 	return num
@@ -275,8 +275,6 @@ def distTraveled(player_health, inventory):
 	elif(ITEMS[3] in inventory):
 		modifier = HEELYS_EFFECT
 		print(ITEMS[3] + " has improved your distance traveled")
-
-	print("")
 
 	distance = ((player_health / 4) + 5) * modifier
 
@@ -359,6 +357,7 @@ def main():
 					print("")
 				else:
 					print(EAT_FAIL)
+					print("")
 			# else it is not morning
 			else:
 				isMorning = False
@@ -436,6 +435,9 @@ def main():
 				curDistance += (distTraveled(playerHealth, inventory) / 2)
 			else:
 				curDistance += distTraveled(playerHealth, inventory)
+
+			print(DIST + str(curDistance))
+			print("")
 
 		# else if staying
 		else:
