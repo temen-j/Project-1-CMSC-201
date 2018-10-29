@@ -32,6 +32,9 @@ FOODS_HEALTH = [-30, -5, 15, 25, 30]
 ITEMS = ["Sword", "Bicycle", "Hi-C", "Heelys",
          "Walkman", "Laser Cannon", "Rubber Band"]
 
+#Starting inventory
+START_INVENTORY = ["Walkie Talkie", "Flashlight"]
+
 #Options that you have in the morning
 MORNING_OPTIONS = ["View inventory", "View current status",
                    "Eat an Eggo Waffle", "Nothing else"]
@@ -68,7 +71,7 @@ EAT_HURT = "Your health has decreased by: "
 SPOTTED = "The Demogorgon has found you. Prepare to yourself..."
 
 #Fleeing messages
-FLEE_SUCCESS = "You have fleed successfully!"
+FLEE_SUCCESS = "You have fled successfully!"
 FLEE_FAIL = "You have failed to flee!"
 
 #Flail message
@@ -125,19 +128,19 @@ def displayMenu(choices):
 # Output:         damage; the amount of damage that the item inflicts
 def calcDamage(item):
 
-    damage = NONE_DMG
-    if(item == ITEMS[0] ):
-        damage = SWORD_DMG
-    elif(item == ITEMS[4]):
-        damage = WALKMAN_DMG
-    elif(item == ITEMS[5]):
-        damage = LASERCANNON_DMG
-    elif(item == ITEMS[6]):
-        damage = RUBBERBAND_DMG
-    elif(item == "Flashlight"):
-        damage = FLASHLIGHT_DMG
+	damage = NONE_DMG
+	if(item == ITEMS[0] ):
+		damage = SWORD_DMG
+	elif(item == ITEMS[5]):
+		damage = LASERCANNON_DMG
+	elif(item == ITEMS[6]):
+		damage = RUBBERBAND_DMG
+	elif(item == START_INVENTORY[0]):
+		damage = WALKTALKIE_DMG	
+	elif(item == START_INVENTORY[1]):
+		damage = FLASHLIGHT_DMG
 
-    return damage
+	return damage
 
 # eat()           Compute the health boost offered by a food that a player has
 #                 chosen to eath based on the health value of that food and
@@ -149,20 +152,23 @@ def calcDamage(item):
 #                 the item
 def eat(food, player_health):
 
-    newHealth = player_health
+	newHealth = player_health
 
-    if(food == FOODS[0]):
-        newHealth = FOODS_HEALTH[0]
-    elif(food == FOODS[1]):
-        newHealth = FOODS_HEALTH[1]
-    elif(food == FOODS[2]):
-        newHealth = FOODS_HEALTH[2]
-    elif(food == FOODS[3]):
-        newHealth = FOODS_HEALTH[3]
-    elif(food == FOODS[4]):
-        newHealth = FOODS_HEALTH[4]
+	if(food == FOODS[0]):
+		newHealth += FOODS_HEALTH[0]
+	elif(food == FOODS[1]):
+		newHealth += FOODS_HEALTH[1]
+	elif(food == FOODS[2]):
+		newHealth += FOODS_HEALTH[2]
+	elif(food == FOODS[3]):
+		newHealth += FOODS_HEALTH[3]
+	elif(food == FOODS[4]):
+		newHealth += FOODS_HEALTH[4]
 
-    return newHealth
+	if(newHealth > MAX_HEALTH):
+		newHealth = MAX_HEALTH
+
+	return newHealth
 
 # fight()         Allow the player to fight The Demogorgon. Fight until someone
 #                 someone dies, or you successfully run away. Certain items in
@@ -173,7 +179,74 @@ def eat(food, player_health):
 #                 inventory; the list of item the palyer has available
 # Output:         remHealth; the remaining health the player has after the
 #                 fight is concluded
+def fight(player_health, item, inventory):
+	choice = 0
+	demoHp = DEM_MAX_HEALTH
+	remHealth = player_health
 
+	#Apply modifiers to the demogorgon
+	if(ITEMS[2] in inventory):
+		demoHp *= HI_C_EFFECT
+	demoDamage = 20
+	if(ITEMS[4] in inventory):
+		demoDamage *= WALKMAN_EFFECT
+
+	print(SPOTTED)
+
+	stillFighting = True
+
+	while(stillFighting):
+		print("")
+		displayMenu(FIGHT_OPTIONS)
+		print("")
+		choice = getUserChoice(FIGHT_OPTIONS)
+		print("")
+
+		#Fight
+		if(choice == 1):
+
+			damage = calcDamage(item)
+			print(FIGHT_MSG + str(damage))
+			demoHp -= damage
+
+			print(DEM_FIGHT_MSG + str(demoDamage))
+			remHealth -= demoDamage
+
+			if(remHealth <= MIN_HEALTH):
+				stillFighting = False
+			elif(demoHp <= MIN_HEALTH):
+				stillFighting = False
+
+			print("")
+			print(HP + str(remHealth))
+			print("Monter's Health: " + str(demoHp))
+			print("")
+		#Flail
+		elif(choice == 2):
+			print(FLAIL_MSG)
+			remHealth = 0
+			stillFighting = False
+			print("")
+		#Flee
+		elif(choice == 3):
+			randNum = randint(1,10)
+			if(randNum <= 3):
+				stillFighting = False
+				print(FLEE_SUCCESS)
+			else:
+				print(FLEE_FAIL)
+				print(DEM_FIGHT_MSG + str(demoDamage))
+			remHealth -= demoDamage
+			if(remHealth <= MIN_HEALTH):
+				stillFighting = False
+			elif(demoHp <= MIN_HEALTH):
+				stillFighting = False
+
+			print(HP + str(player_health))
+			print("")
+
+
+	return remHealth
 
 # getValidInt()   Returns a valid integer based off of a minimum and maximum
 #                 value, the vaule is between minimum and maximum
@@ -197,10 +270,14 @@ def getValidInt(minNum, maxNum):
 def distTraveled(player_health, inventory):
 	distance = 0
 	modifier = 1
-	if(ITEMS[3] in inventory):
-		modifier = HEELYS_EFFECT
 	if(ITEMS[1] in inventory):
 		modifier = BICYCLE_EFFECT
+		print(ITEMS[1] + " has improved your distance traveled")
+	elif(ITEMS[3] in inventory):
+		modifier = HEELYS_EFFECT
+		print(ITEMS[3] + " has improved your distance traveled")
+
+	print("")
 
 	distance = ((player_health / 4) + 5) * modifier
 
@@ -213,15 +290,19 @@ def main():
 	curDay = 1
 	curDistance = 0.0
 
-	playerHealth = 50
+	playerHealth = MAX_HEALTH
 
-	inventory = ["Walkie Talkie", "Flashlight"]
+	inventory = START_INVENTORY[:]
 	equipped = ""
+
+	isSurviving = True
 
     # while the player isn't dead and hasn't made it far enough
 	while(curDistance < SURVIVE_DIST and curDay <= SURVIVE_DAYS):
 
-		
+		print(DAY + str(curDay))
+		print("")
+
 		isMorning = True
 		ateWaffle = False
 		# perform the daily tasks
@@ -260,7 +341,7 @@ def main():
 				else:
 					print("")
 			# else if choice is viewing your current status
-			if(choice == 2):
+			elif(choice == 2):
 				# print out health, distance traveled, and equipped item
 				print(HP + str(playerHealth))
 				print(DIST + str(curDistance))
@@ -275,6 +356,7 @@ def main():
 						playerHealth = 100
 					# print out that you ate an Eggo Waffle
 					print("You ate an Eggo Waffle and gained 10 HP!")
+					ateWaffle = True
 					print("")
 				else:
 					print(EAT_FAIL)
@@ -283,32 +365,39 @@ def main():
 				isMorning = False
 
 		# Ask if you stay or go
+		print("")
+		displayMenu(DAY_OPTIONS)
+		print("")
 		choice = getUserChoice(DAY_OPTIONS)
+		print("")
 
 		# if packing up camp
-		if(choice == 1)
+		if(choice == 1):
 			# print leaving message
 			print("You have decided to leave camp...")
 			print("")
 
+			isTrenched = False
+
 			# initiate random event
-			randNum = randint(1,10)
+			randNum = randint(1,10)			
+
 			# if backpack at 20% chance
 			if(randNum == 1 or randNum == 2):
 				# print backpack message
 				print("You stumble upon someone's backpack that has been left behind.")
 				# initiate random food
 				randNum = randint(1,5)
-				print("You find: " FOODS[randNum-1])
+				print("You find: " + FOODS[randNum-1])
 				print("")
 				# get a valid choice to eat or not 2 or 1
 				displayMenu(PACK_OPTIONS)
 				choice = getUserChoice(PACK_OPTIONS)
 				print("")
 				# if choice is to eat
-				if(choice = 1):
-					playerHealth = eat(FOOD[randNum-1], playerHealth)
-					print(EAT + FOOD[randNum-1])
+				if(choice == 1):
+					playerHealth = eat(FOODS[randNum-1], playerHealth)
+					print(EAT + FOODS[randNum-1])
 					if(FOODS_HEALTH[randNum-1] < 0):
 						print(EAT_HURT + str(FOODS_HEALTH[randNum-1]*-1))
 					else:
@@ -317,45 +406,67 @@ def main():
 				# else go back
 				else:
 					print("")
-            # else if old shed at 20% chance
-                # print old shed message
-                #print("You stumble upon an old shed lined with shelves.")
-                #print("You find: ")
-                #initiate random item
-                #randint(1,7)
-                #Add item ITEM[randomInt] to inventory if not already the inventory
-            # else if trench at 20% chance
-                # print trench message
-                #print("You stumble into a trench. You have to recover for another day")
-                # subtract half distance so when adding distTraveled later
-                # it totals to positive half distTraveled
-                # add extra day
-            # else if demogorgon fight at 30% chance
-                #fight(playerHealth, equippedItem, inventory)
-            # else do nothing
+			# else if old shed at 20% chance
+			elif(randNum == 3 or randNum == 4):
+				# print old shed message
+				print("You stumble upon an old shed lined with shelves.")
+				randNum = randint(1,7)
+				print("You find: " + ITEMS[randNum-1])
+				if(ITEMS[randNum-1] not in  inventory):
+					inventory.append(ITEMS[randNum-1])
+				print("")
+			# else if trench at 20% chance
+			elif(randNum == 5 or randNum == 6):
+				# print trench message
+				print("You stumble into a trench. You have to recover for another day")
+				inTrenched = True
+				curDay += 1
+				print("")
+				# add extra day
+			# else if demogorgon fight at 30% chance
+			elif(randNum >= 7 and randNum <=10):
+				playerHealth = fight(playerHealth, equipped, inventory)
+				print("")
+			# else do nothing
+			else:
+				print("")
 
-            # set total distance to covered + todays distance traveled
-            
-            #totalDist += distTraveled(playerHealth, inventory)
 
-        # else if staying
-            # print statying message
-            #print("You decide to stay and rest at camp")
-            # initiate random event
-            #randint(1,10)
-            # if demogorgon shows up <=7
-            #fight(playerHealth, equippedItem, inventory)
-            # else HP is set to max
+			# set total distance to covered + todays distance traveled
+			if(isTrenched):
+				curDistance += (distTraveled(playerHealth, inventory) / 2)
+			else:
+				curDistance += distTraveled(playerHealth, inventory)
 
-        # increment day
+		# else if staying
+		else:
+			# print statying message
+			print("You decide to stay and rest at camp")
+			# initiate random event
+			randNum = randint(1,10)
+			# if demogorgon shows up <=7
+			if(randNum <= 7):
+				fight(playerHealth, equipped, inventory)
+			else:
+				playerHealth = MAX_HEALTH
+			#fight(playerHealth, equippedItem, inventory)
+			# else HP is set to max
+
+		# increment day
 		curDay += 1
-        # check to see if we have reached SURVIVE_DAYS or SURVIVE_DIST
-            # if win
-                # print winning messages and stats
-            # else if lose
-                # print lossing messages and stats
-
-
+		# check to see if we have reached SURVIVE_DAYS or SURVIVE_DIST
+		if(playerHealth	<= MIN_HEALTH):
+			isSurviving	= False	
+			print(LOSE)
+			print(HP + str(playerHealth))
+			print(DIST + str(curDistance))
+			print(EQUIP	+ equipped)
+		elif(curDistance >= SURVIVE_DIST and curDay > SURVIVE_DAYS):
+			isSurviving = False
+			print(WIN)
+			print(HP + str(playerHealth))
+			print(DIST + str(curDistance))
+			print(EQUIP	+ equipped)
 
 
 
