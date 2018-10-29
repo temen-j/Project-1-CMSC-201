@@ -3,7 +3,7 @@
 # Date:    10/22/2018
 # Section: 07
 # E-mail:  r61@umbc.edu
-# Description:  This is the design for the first project
+# Description:  This is first project in CMSC 201. The user plays a survival game.
 #
 
 ##################################
