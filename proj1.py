@@ -235,16 +235,15 @@ def fight(player_health, item, inventory):
 				print(FLEE_SUCCESS)
 			else:
 				print(FLEE_FAIL)
-				print(DEM_FIGHT_MSG + str(demoDamage))
-			remHealth -= demoDamage
+				print(DEM_FIGHT_MSG + str(demoDamage/2))
+				remHealth -= demoDamage/2
 			if(remHealth <= MIN_HEALTH):
 				stillFighting = False
 			elif(demoHp <= MIN_HEALTH):
 				stillFighting = False
 
-			print(HP + str(player_health))
+			print(HP + str(remHealth))
 			print("")
-
 
 	return remHealth
 
@@ -298,7 +297,7 @@ def main():
 	isSurviving = True
 
     # while the player isn't dead and hasn't made it far enough
-	while(curDistance < SURVIVE_DIST and curDay <= SURVIVE_DAYS):
+	while(isSurviving):
 
 		print(DAY + str(curDay))
 		print("")
@@ -446,7 +445,7 @@ def main():
 			randNum = randint(1,10)
 			# if demogorgon shows up <=7
 			if(randNum <= 7):
-				fight(playerHealth, equipped, inventory)
+				playerHealth = fight(playerHealth, equipped, inventory)
 			else:
 				playerHealth = MAX_HEALTH
 			#fight(playerHealth, equippedItem, inventory)
@@ -461,7 +460,7 @@ def main():
 			print(HP + str(playerHealth))
 			print(DIST + str(curDistance))
 			print(EQUIP	+ equipped)
-		elif(curDistance >= SURVIVE_DIST and curDay > SURVIVE_DAYS):
+		elif(curDistance >= SURVIVE_DIST or curDay > SURVIVE_DAYS):
 			isSurviving = False
 			print(WIN)
 			print(HP + str(playerHealth))
